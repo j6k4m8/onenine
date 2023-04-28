@@ -1,6 +1,6 @@
 # onenine
 
-`onenine` is a daemon process that guarantees that your servers have precisely "one nine" of uptime. It does this by pausing docker containers on a schedule.
+`onenine` is a container management tool that guarantees that your servers have precisely "one nine" of uptime. It does this by pausing docker containers if they accidentally have too many of nine.
 
 ## Installation
 
