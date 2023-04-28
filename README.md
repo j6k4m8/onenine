@@ -4,11 +4,6 @@
 
 onenine specializes in "downward" nine management (i.e., removing nine if there are too many); you are responsible for "upward" nine management (i.e., getting your thing to run more than desired many of nine)
 
-## Installation
-
-```bash
-pip install onenine
-```
 
 ## Usage
 
