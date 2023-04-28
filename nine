@@ -1,0 +1,88 @@
+#!/usr/bin/env python3
+"""
+# onenine
+
+`onenine` is a daemon process that guarantees that your servers have precisely "one nine" of uptime. It does this by pausing docker containers on a schedule.
+
+## Installation
+
+```bash
+pip install onenine
+```
+
+## Usage
+
+```bash
+nine [container-id]
+```
+
+You can add more nines to the uptime:
+
+```bash
+nine nine nine [container-id]
+```
+
+"""
+
+from datetime import datetime
+import logging
+from typing import Optional
+import sys
+import subprocess
+
+container_mgr = "podman"  # you heard me
+
+
+def get_container_uptime_sec(container_id: str) -> float:
+    """
+    Get the uptime of a container, using the docker cli
+    """
+    start = subprocess.check_output(
+        f"{container_mgr} inspect --format='{{{{.State.StartedAt}}}}' {container_id}",
+        shell=True,
+    ).decode("utf-8")[:-1]
+    return (
+        datetime.now() - datetime.strptime(start[:26], "%Y-%m-%d %H:%M:%S.%f")
+    ).total_seconds()
+
+
+def guess_container_id() -> str:
+    """
+    Guess the container id by finding the first container that is running
+    """
+    return subprocess.check_output(
+        f"{container_mgr} ps --filter status=running --format " + "'{{.ID}}'",
+        shell=True,
+    ).decode("utf-8")[:-1]
+
+
+def main(number_of_nines: int = 0, container_id: Optional[str] = None):
+    """
+    Main function for onenine
+    """
+    # Check if the container is running:
+
+    logging.debug(f"Number of nines: {number_of_nines+1}")
+    logging.debug(f"Container ID: {container_id}")
+    # 1 => 90
+    # 2 => 99
+    # 3 => 99.9
+    # 4 => 99.99
+    nines = "9" * int(number_of_nines)
+    uptime = eval(f"0.9{nines}")
+    logging.debug(f"Uptime: {uptime * 100}")
+    container_id = container_id or guess_container_id()
+    logging.debug(f"Container uptime: {get_container_uptime_sec(container_id)}")
+    if get_container_uptime_sec(container_id) > uptime * 100:
+        subprocess.run(f"{container_mgr} pause {container_id}", shell=True)
+
+
+if __name__ == "__main__":
+    args = sys.argv[1:]
+    if len(args) == 0:
+        num_nines = 0
+        container_id = None
+    else:
+        num_nines = len([arg for arg in args if arg == "nine"])
+        container_id = args[-1] if args[-1] != "nine" else None
+    main(num_nines, container_id)
